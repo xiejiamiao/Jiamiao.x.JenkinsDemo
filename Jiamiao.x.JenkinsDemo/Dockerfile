@@ -1,22 +1,16 @@
-#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
+# 指定运行是镜像
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS base
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
+# 指定编译和发布镜像
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+# 设置工作目录为src
 WORKDIR /src
-COPY ["Jiamiao.x.JenkinsDemo.csproj", "Jiamiao.x.JenkinsDemo/"]
-RUN dotnet restore "Jiamiao.x.JenkinsDemo/Jiamiao.x.JenkinsDemo.csproj"
-COPY . .
-WORKDIR "/src/Jiamiao.x.JenkinsDemo"
-RUN dotnet build "Jiamiao.x.JenkinsDemo.csproj" -c Release -o /app/build
+# 拷贝所有文件到容器中的工作目录
+COPY . ./
+RUN dotnet restore "./Jiamiao.x.JenkinsDemo.csproj" && dotnet build "./Jiamiao.x.JenkinsDemo.csproj" -c Release -o /app/build && dotnet publish "./Jiamiao.x.JenkinsDemo.csproj" -c Release -o /app/publish
 
-FROM build AS publish
-RUN dotnet publish "Jiamiao.x.JenkinsDemo.csproj" -c Release -o /app/publish
-
-FROM base AS final
+FROM base as final
 WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Jiamiao.x.JenkinsDemo.dll"]
+COPY --from=build /app/publish .
+ENTRYPOINT [ "dotnet","Jiamiao.x.JenkinsDemo.dll" ]
